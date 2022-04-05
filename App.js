@@ -1,10 +1,28 @@
 import * as Location from 'expo-location'
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react'
-import { View, Text, Dimensions, StyleSheet, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  Dimensions,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator
+} from 'react-native';
+import { Fontisto } from '@expo/vector-icons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const API_KEY = 'e3d67d18387c6a74bedb076ecbb5ace4'
+
+const icons = {
+  Clouds: "cloudy",
+  Clear: "day-sunny",
+  Atmosphere: "cloudy-gusts",
+  Snow: "snow",
+  Rain: "rain",
+  Drizzle: "day-rain",
+  Thunderstorm: "lightning",
+}
 
 export default function App() {
   const [city, setCity] = useState("Loading...")
@@ -20,77 +38,97 @@ export default function App() {
     const location = await Location.reverseGeocodeAsync({ latitude, longitude }, { useGoogleMaps: false })
     setCity(location[0].city)
 
-    const response = await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${latitude}&lon=${longitude}&exclude=alerts&appid=${API_KEY}`)
-    console.log(`https://api.openweathermap.org/data/2.5/onecall?lat=${latitude}&lon=${longitude}&exclude=alerts&appid=${API_KEY}`)
+    const response = await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${latitude}&lon=${longitude}&exclude=alerts&appid=${API_KEY}&units=metric`)
     const json = await response.json()
-    console.log(json)
+    setDays([...json.daily])
   }
   useEffect(() => {
     getWeather();
   }, [])
 
   return (
-    <View style={style.container}>
+    <View style={styles.container}>
       <StatusBar style='dark' />
-      <View style={style.city}>
-        <Text style={style.cityName}>{city}</Text>
+      <View style={styles.city}>
+        <Text style={styles.cityName}>{city}</Text>
       </View>
-      <View style={style.weather}>
+      <View style={styles.weather}>
         <ScrollView
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
         >
-          <View style={style.day}>
-            <Text style={style.temp}>27</Text>
-            <Text style={style.description}>Sunny</Text>
-          </View>
-          <View style={style.day}>
-            <Text style={style.temp}>27</Text>
-            <Text style={style.description}>Sunny</Text>
-          </View>
-          <View style={style.day}>
-            <Text style={style.temp}>27</Text>
-            <Text style={style.description}>Sunny</Text>
-          </View>
-          <View style={style.day}>
-            <Text style={style.temp}>27</Text>
-            <Text style={style.description}>Sunny</Text>
-          </View>
+          {days.length === 0
+            ? (
+              <>
+              <View style={styles.day}>
+                <ActivityIndicator
+                  color="white"
+                  style={{ marginTop: 10 }}
+                  size="large"
+                />
+              </View>
+              </>
+            )
+            : (
+              <>
+              {days.map((day, index) => (
+                <View key={index} style={styles.day}>
+                  <Fontisto name={icons[day.weather[0].main]} size={68} color="white" />
+                  <Text style={styles.temp}>
+                    {parseFloat(day.temp.day).toFixed(1)}
+                  </Text>
+                  <Text style={styles.description}>{day.weather[0].main}</Text>
+                  <Text style={styles.tinyText}>{day.weather[0].description}</Text>
+                </View>
+              ))}
+              </>
+            ) }
         </ScrollView>
       </View>
     </View>
   );
 }
 
-const style = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'tomato'
+    backgroundColor: "tomato",
   },
   city: {
     flex: 1.2,
-    justifyContent: 'center',
-    alignItems: 'center'
+    justifyContent: "center",
+    alignItems: "center",
   },
   cityName: {
-    fontSize: 68,
-    fontWeight: '600'
+    fontSize: 58,
+    fontWeight: "500",
+    color: "white",
   },
   weather: {
-    flex: 3,
-    backgroundColor: 'blue'
+    flex: 2,
   },
   day: {
     width: SCREEN_WIDTH,
-    alignItems: 'center',
+    alignItems: "center",
+    paddingHorizontal: 20,
   },
   temp: {
     marginTop: 50,
-    fontSize: 178
+    fontWeight: "600",
+    fontSize: 100,
+    color: "white",
   },
   description: {
-    marginTop: -30,
-    fontSize: 60
-  }
-})
+    marginTop: 10,
+    fontSize: 50,
+    color: "white",
+    fontWeight: "500",
+  },
+  tinyText: {
+    marginTop: 10,
+    fontSize: 30,
+    color: "white",
+    fontWeight: "500",
+  },
+});
